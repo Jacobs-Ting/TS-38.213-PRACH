@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5G NR PRACH Flow Visualizer</title>
+  <style>
+    :root {
+      --bg-0: #07111f;
+      --bg-1: #0b1b31;
+      --bg-2: #122844;
+      --panel: rgba(9, 21, 38, 0.88);
+      --panel-soft: rgba(16, 35, 60, 0.78);
+      --line: rgba(106, 164, 255, 0.28);
+      --line-strong: rgba(124, 196, 255, 0.72);
+      --text: #e8f3ff;
+      --muted: #90abc9;
+      --cyan: #66e5ff;
+      --blue: #4da3ff;
+      --green: #67f7bf;
+      --amber: #ffd166;
+      --pink: #ff6fae;
+      --danger: #ff7f9f;
+      --shadow: 0 0 0 1px rgba(116, 187, 255, 0.12), 0 18px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(42, 110, 255, 0.16), transparent 30%),
+        radial-gradient(circle at 80% 18%, rgba(102, 229, 255, 0.1), transparent 22%),
+        linear-gradient(180deg, var(--bg-1), var(--bg-0) 45%, #050b15 100%);
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(125, 180, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(125, 180, 255, 0.06) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 1));
+    }
+
+    .app {
+      width: min(1200px, calc(100vw - 24px));
+      margin: 12px auto;
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto minmax(460px, 1fr) 170px;
+      gap: 14px;
+      min-height: calc(100vh - 24px);
+    }
+
+    .toolbar,
+    .log-panel,
+    .viz-panel {
+      border: 1px solid rgba(126, 190, 255, 0.16);
+      background: linear-gradient(180deg, rgba(15, 31, 54, 0.94), rgba(7, 18, 33, 0.92));
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .toolbar {
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: clamp(1.2rem, 2.2vw, 1.9rem);
+      letter-spacing: 0.06em;
+    }
+
+    .title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid rgba(116, 196, 255, 0.35);
+      background: linear-gradient(135deg, rgba(14, 40, 74, 0.95), rgba(18, 71, 112, 0.9));
+      color: var(--text);
+      padding: 12px 18px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      letter-spacing: 0.03em;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      box-shadow: 0 0 20px rgba(56, 146, 255, 0.18);
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: rgba(131, 228, 255, 0.62);
+      box-shadow: 0 0 24px rgba(83, 186, 255, 0.28);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .viz-panel {
+      padding: 26px 26px 20px;
+      display: grid;
+      grid-template-columns: 170px 1fr 170px;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    .node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      position: relative;
+    }
+
+    .node-visual {
+      width: 108px;
+      height: 108px;
+      border-radius: 28px;
+      position: relative;
+      border: 1px solid rgba(135, 208, 255, 0.22);
+      background:
+        radial-gradient(circle at 35% 30%, rgba(102, 229, 255, 0.2), transparent 30%),
+        linear-gradient(180deg, rgba(18, 52, 86, 0.95), rgba(10, 24, 43, 0.95));
+      box-shadow: inset 0 0 18px rgba(88, 191, 255, 0.14), 0 0 26px rgba(35, 149, 255, 0.18);
+    }
+
+    .node-visual::before,
+    .node-visual::after {
+      content: "";
+      position: absolute;
+      inset: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(120, 204, 255, 0.18);
+    }
+
+    .ue-icon::after {
+      inset: auto;
+      width: 34px;
+      height: 56px;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 10px;
+      border: 2px solid rgba(144, 224, 255, 0.82);
+      box-shadow: 0 0 14px rgba(102, 229, 255, 0.32);
+    }
+
+    .ue-icon::before {
+      inset: auto;
+      width: 10px;
+      height: 10px;
+      left: 50%;
+      bottom: 26px;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: rgba(144, 224, 255, 0.85);
+      box-shadow: 0 0 10px rgba(102, 229, 255, 0.45);
+    }
+
+    .gnb-icon::before,
+    .gnb-icon::after {
+      inset: auto;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .gnb-icon::before {
+      bottom: 22px;
+      width: 20px;
+      height: 48px;
+      border-radius: 12px 12px 4px 4px;
+      background: linear-gradient(180deg, rgba(138, 223, 255, 0.9), rgba(70, 141, 255, 0.7));
+      box-shadow: 0 0 16px rgba(77, 163, 255, 0.35);
+    }
+
+    .gnb-icon::after {
+      top: 28px;
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      border: 2px solid rgba(144, 224, 255, 0.76);
+      clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+      transform: translateX(-50%) rotate(180deg);
+      box-shadow: 0 0 12px rgba(102, 229, 255, 0.22);
+    }
+
+    .node-label {
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+    }
+
+    .node-sub {
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-align: center;
+      line-height: 1.45;
+    }
+
+    .center-stage {
+      position: relative;
+      min-height: 100%;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(6, 15, 28, 0.35), rgba(15, 27, 44, 0.2));
+      overflow: hidden;
+    }
+
+    .lane {
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      height: 1px;
+      border-top: 2px dashed var(--line);
+      opacity: 0.9;
+    }
+
+    .lane::after {
+      content: "";
+      position: absolute;
+      inset: -8px 0;
+      background: linear-gradient(90deg, transparent, rgba(102, 229, 255, 0.08), transparent);
+      filter: blur(6px);
+    }
+
+    .packet-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .packet {
+      --packet-color: var(--cyan);
+      position: absolute;
+      left: 10%;
+      top: 50%;
+      width: 110px;
+      height: 18px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), color-mix(in srgb, var(--packet-color) 88%, white 12%));
+      box-shadow:
+        0 0 8px color-mix(in srgb, var(--packet-color) 70%, white 30%),
+        0 0 24px color-mix(in srgb, var(--packet-color) 60%, transparent 40%);
+      border: 1px solid color-mix(in srgb, var(--packet-color) 70%, white 30%);
+      opacity: 0;
+    }
+
+    .packet::before {
+      content: "";
+      position: absolute;
+      right: -8px;
+      top: 50%;
+      width: 18px;
+      height: 18px;
+      transform: translateY(-50%) rotate(45deg);
+      border-radius: 4px;
+      background: inherit;
+      border-top: inherit;
+      border-right: inherit;
+      box-shadow: inherit;
+    }
+
+    .packet.reverse::before {
+      right: auto;
+      left: -8px;
+      border-top: 0;
+      border-right: 0;
+      border-left: inherit;
+      border-bottom: inherit;
+    }
+
+    .packet-label {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-size: 0.76rem;
+      color: var(--text);
+      text-shadow: 0 0 10px rgba(102, 229, 255, 0.28);
+      letter-spacing: 0.08em;
+    }
+
+    .pulse {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: rgba(102, 229, 255, 0.92);
+      box-shadow: 0 0 18px rgba(102, 229, 255, 0.55);
+      opacity: 0;
+      transform: translate(-50%, -50%);
+    }
+
+    .status-badge {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(13, 31, 54, 0.9);
+      border: 1px solid rgba(111, 182, 255, 0.22);
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+    }
+
+    .legend {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+    }
+
+    .log-panel {
+      padding: 18px 20px;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .log-title {
+      padding-right: 12px;
+      border-right: 1px solid rgba(126, 190, 255, 0.12);
+    }
+
+    .log-title h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+    }
+
+    .log-title p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.9rem;
+    }
+
+    .log-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .log-entry {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(123, 190, 255, 0.16);
+      background: linear-gradient(180deg, rgba(17, 34, 58, 0.75), rgba(9, 20, 35, 0.8));
+      box-shadow: inset 0 0 16px rgba(72, 147, 255, 0.06);
+      opacity: 0;
+      transform: translateY(8px);
+      animation: logReveal 0.35s ease forwards;
+    }
+
+    .log-entry strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.92rem;
+      letter-spacing: 0.05em;
+    }
+
+    .log-entry span {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.9rem;
+    }
+
+    .log-entry.idle {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+
+    @keyframes travel-right {
+      0% { left: 10%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { left: 90%; opacity: 0; }
+    }
+
+    @keyframes travel-left {
+      0% { left: 90%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { left: 10%; opacity: 0; }
+    }
+
+    @keyframes endpoint-ping {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+      30% { opacity: 0.95; }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(3.8); }
+    }
+
+    @keyframes logReveal {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        grid-template-rows: auto minmax(560px, 1fr) 230px;
+      }
+
+      .viz-panel {
+        grid-template-columns: 120px 1fr 120px;
+        padding: 18px 14px;
+      }
+
+      .node-visual {
+        width: 88px;
+        height: 88px;
+      }
+
+      .log-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .log-title {
+        border-right: 0;
+        border-bottom: 1px solid rgba(126, 190, 255, 0.12);
+        padding-right: 0;
+        padding-bottom: 12px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        width: min(100vw - 12px, 1200px);
+        margin: 6px auto;
+        padding: 8px;
+        gap: 10px;
+        min-height: calc(100vh - 12px);
+      }
+
+      .toolbar {
+        padding: 16px;
+      }
+
+      .actions {
+        width: 100%;
+      }
+
+      button {
+        flex: 1;
+        min-width: 0;
+        padding: 12px 10px;
+        font-size: 0.9rem;
+      }
+
+      .viz-panel {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(300px, 1fr) auto;
+        gap: 16px;
+      }
+
+      .node {
+        flex-direction: row;
+        justify-content: flex-start;
+        padding-inline: 8px;
+      }
+
+      .center-stage {
+        min-height: 320px;
+      }
+
+      .status-badge {
+        top: 12px;
+        right: 12px;
+      }
+
+      .legend {
+        flex-direction: column;
+        gap: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="toolbar">
+      <div class="title">
+        <h1>5G NR PRACH Flow Visualizer</h1>
+        <p>Dynamic replay for Type-I 4-Step and Type-II 2-Step random access procedures.</p>
+      </div>
+      <div class="actions">
+        <button id="play4">播放 4-Step RACH (Type-I)</button>
+        <button id="play2">播放 2-Step RACH (Type-II)</button>
+      </div>
+    </section>
+
+    <section class="viz-panel">
+      <div class="node">
+        <div class="node-visual ue-icon"></div>
+        <div class="node-label">UE</div>
+        <div class="node-sub">User Equipment<br>PRACH Originator</div>
+      </div>
+
+      <div class="center-stage" id="stage">
+        <div class="status-badge" id="status">IDLE</div>
+        <div class="packet-layer" id="packetLayer"></div>
+        <div class="legend">
+          <span>Dashed lane: random access message trajectory</span>
+          <span>Glow packet: PHY/MAC signaling unit</span>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="node-visual gnb-icon"></div>
+        <div class="node-label">gNB</div>
+        <div class="node-sub">Next Generation NodeB<br>Random Access Responder</div>
+      </div>
+    </section>
+
+    <section class="log-panel">
+      <div class="log-title">
+        <h2>協定解析面板</h2>
+        <p>動畫播放期間，這裡會同步顯示每一則 PRACH / MAC 訊息的角色、實體層行為與存取結果。</p>
+      </div>
+      <div class="log-feed" id="logFeed">
+        <div class="log-entry idle">
+          <strong>System Ready</strong>
+          <span>選擇上方任一流程後開始播放。支援 4-Step RACH (Msg1~Msg4) 與 2-Step RACH (MsgA~MsgB)。</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const stage = document.getElementById('stage');
+    const packetLayer = document.getElementById('packetLayer');
+    const logFeed = document.getElementById('logFeed');
+    const status = document.getElementById('status');
+    const play4 = document.getElementById('play4');
+    const play2 = document.getElementById('play2');
+
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    const lanes = [20, 38, 56, 74];
+    let isPlaying = false;
+    let currentRun = 0;
+
+    lanes.forEach((top) => {
+      const lane = document.createElement('div');
+      lane.className = 'lane';
+      lane.style.top = `${top}%`;
+      stage.appendChild(lane);
+    });
+
+    function setButtons(disabled) {
+      play4.disabled = disabled;
+      play2.disabled = disabled;
+    }
+
+    function clearStage() {
+      packetLayer.innerHTML = '';
+    }
+
+    function resetLog(title, desc) {
+      logFeed.innerHTML = '';
+      pushLog(title, desc);
+    }
+
+    function pushLog(title, text) {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `<strong>${title}</strong><span>${text}</span>`;
+      logFeed.prepend(entry);
+    }
+
+    function pulseAt(direction, laneTop, color) {
+      const pulse = document.createElement('div');
+      pulse.className = 'pulse';
+      pulse.style.left = direction === 'right' ? '90%' : '10%';
+      pulse.style.top = `${laneTop}%`;
+      pulse.style.background = color;
+      pulse.style.boxShadow = `0 0 18px ${color}`;
+      pulse.style.animation = 'endpoint-ping 0.55s ease-out forwards';
+      packetLayer.appendChild(pulse);
+      pulse.addEventListener('animationend', () => pulse.remove(), { once: true });
+    }
+
+    function launchPacket({ label, direction, laneIndex, duration = 1500, color = '#66e5ff', width = 110, delay = 0 }) {
+      return new Promise((resolve) => {
+        const packet = document.createElement('div');
+        const laneTop = lanes[laneIndex];
+        packet.className = `packet${direction === 'left' ? ' reverse' : ''}`;
+        packet.style.top = `${laneTop}%`;
+        packet.style.width = `${width}px`;
+        packet.style.setProperty('--packet-color', color);
+
+        const packetLabel = document.createElement('div');
+        packetLabel.className = 'packet-label';
+        packetLabel.textContent = label;
+        packet.appendChild(packetLabel);
+        packetLayer.appendChild(packet);
+
+        setTimeout(() => {
+          packet.style.animation = `${direction === 'right' ? 'travel-right' : 'travel-left'} ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) forwards`;
+          packet.addEventListener('animationend', () => {
+            pulseAt(direction, laneTop, color);
+            packet.remove();
+            resolve();
+          }, { once: true });
+        }, delay);
+      });
+    }
+
+    async function playSequence(sequence, headerTitle, headerDesc) {
+      if (isPlaying) return;
+      isPlaying = true;
+      currentRun += 1;
+      const runId = currentRun;
+      setButtons(true);
+      clearStage();
+      resetLog(headerTitle, headerDesc);
+      status.textContent = 'RUNNING';
+
+      for (const step of sequence) {
+        if (runId !== currentRun) return;
+        if (step.type === 'wait') {
+          status.textContent = step.label || 'gNB PROCESSING';
+          pushLog(step.title, step.text);
+          await sleep(step.duration);
+          continue;
+        }
+
+        status.textContent = step.status;
+        pushLog(step.title, step.text);
+
+        if (step.bundle) {
+          await Promise.all(step.bundle.map((item) => launchPacket(item)));
+        } else {
+          await launchPacket(step.packet);
+        }
+
+        if (step.afterDelay) {
+          await sleep(step.afterDelay);
+        }
+      }
+
+      if (runId === currentRun) {
+        status.textContent = 'COMPLETE';
+        pushLog('Procedure Complete', '流程播放完成，可再次點選按鈕重播 4-Step 或 2-Step RACH。');
+        isPlaying = false;
+        setButtons(false);
+      }
+    }
+
+    const sequence4 = [
+      {
+        status: 'MSG1 / PRACH',
+        title: 'Msg1',
+        text: '傳送 Zadoff-Chu 序列，使用 RA-RNTI 定址。',
+        packet: { label: 'Msg1  PRACH Preamble', direction: 'right', laneIndex: 0, duration: 1500, color: '#66e5ff', width: 124 },
+        afterDelay: 280
+      },
+      {
+        type: 'wait',
+        label: 'gNB PROCESSING',
+        duration: 750,
+        title: 'Processing Delay',
+        text: 'gNB 偵測 PRACH preamble，估測到達時序並準備隨機接入回應。'
+      },
+      {
+        status: 'MSG2 / RAR',
+        title: 'Msg2 (RAR)',
+        text: '包含 Timing Advance (TA), UL Grant, TC-RNTI。',
+        packet: { label: 'Msg2  Random Access Response', direction: 'left', laneIndex: 1, duration: 1600, color: '#ffd166', width: 146 },
+        afterDelay: 260
+      },
+      {
+        status: 'MSG3 / PUSCH',
+        title: 'Msg3',
+        text: '透過 PUSCH 傳送 RRC Setup Request。',
+        packet: { label: 'Msg3  Scheduled Transmission', direction: 'right', laneIndex: 2, duration: 1550, color: '#67f7bf', width: 154 },
+        afterDelay: 260
+      },
+      {
+        status: 'MSG4 / CONTENTION RESOLUTION',
+        title: 'Msg4',
+        text: '競爭解決成功，TC-RNTI 轉為 C-RNTI。',
+        packet: { label: 'Msg4  Contention Resolution', direction: 'left', laneIndex: 3, duration: 1600, color: '#ff6fae', width: 162 }
+      }
+    ];
+
+    const sequence2 = [
+      {
+        status: 'MSGA / COMPOSITE',
+        title: 'MsgA',
+        text: '連續傳送 PRACH Preamble 與 PUSCH Payload (無 TA 保護)。',
+        bundle: [
+          { label: 'MsgA-1  PRACH', direction: 'right', laneIndex: 1, duration: 1380, color: '#66e5ff', width: 98, delay: 0 },
+          { label: 'MsgA-2  PUSCH Payload', direction: 'right', laneIndex: 1, duration: 1380, color: '#67f7bf', width: 128, delay: 180 }
+        ],
+        afterDelay: 320
+      },
+      {
+        type: 'wait',
+        label: 'gNB PROCESSING',
+        duration: 820,
+        title: 'Processing Delay',
+        text: 'gNB 解碼 MsgA 中的 preamble 與資料載荷，直接決定隨機接入結果。'
+      },
+      {
+        status: 'MSGB / RESPONSE',
+        title: 'MsgB',
+        text: '一次回傳 RAR 與競爭解決結果。',
+        packet: { label: 'MsgB  RAR + Contention Resolution', direction: 'left', laneIndex: 2, duration: 1620, color: '#4da3ff', width: 182 }
+      }
+    ];
+
+    play4.addEventListener('click', () => {
+      playSequence(
+        sequence4,
+        '4-Step RACH / Type-I',
+        '經典 contention-based random access，依序執行 Msg1、Msg2、Msg3、Msg4。'
+      );
+    });
+
+    play2.addEventListener('click', () => {
+      playSequence(
+        sequence2,
+        '2-Step RACH / Type-II',
+        '精簡式 random access，MsgA 將 preamble 與 payload 合併，MsgB 一次完成回應與 contention resolution。'
+      );
+    });
+  </script>
+</body>
+</html>
