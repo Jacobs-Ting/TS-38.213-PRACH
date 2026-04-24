@@ -98,6 +98,33 @@
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .mode-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(122, 194, 255, 0.22);
+      background: linear-gradient(180deg, rgba(13, 30, 50, 0.88), rgba(8, 19, 34, 0.86));
+      box-shadow: inset 0 0 18px rgba(74, 154, 255, 0.08);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .mode-toggle input {
+      accent-color: #ffd166;
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .mode-toggle span {
+      font-size: 0.92rem;
+      letter-spacing: 0.03em;
     }
 
     button {
@@ -141,6 +168,39 @@
       position: relative;
     }
 
+    .ue-stack {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+      transition: justify-content 0.35s ease, gap 0.35s ease;
+    }
+
+    .ue-stack.contention-mode {
+      justify-content: space-evenly;
+      gap: 28px;
+    }
+
+    .ue-unit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.35s ease, margin 0.35s ease;
+      overflow: hidden;
+      max-height: 220px;
+    }
+
+    .ue-unit.hidden {
+      opacity: 0;
+      transform: translateY(-14px) scale(0.96);
+      max-height: 0;
+      margin: 0;
+      pointer-events: none;
+    }
+
     .node-visual {
       width: 108px;
       height: 108px;
@@ -151,6 +211,7 @@
         radial-gradient(circle at 35% 30%, rgba(102, 229, 255, 0.2), transparent 30%),
         linear-gradient(180deg, rgba(18, 52, 86, 0.95), rgba(10, 24, 43, 0.95));
       box-shadow: inset 0 0 18px rgba(88, 191, 255, 0.14), 0 0 26px rgba(35, 149, 255, 0.18);
+      transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease, background 0.28s ease;
     }
 
     .node-visual::before,
@@ -241,6 +302,7 @@
       height: 1px;
       border-top: 2px dashed var(--line);
       opacity: 0.9;
+      transition: top 0.35s ease, opacity 0.35s ease, border-color 0.35s ease;
     }
 
     .lane::after {
@@ -249,6 +311,18 @@
       inset: -8px 0;
       background: linear-gradient(90deg, transparent, rgba(102, 229, 255, 0.08), transparent);
       filter: blur(6px);
+    }
+
+    .lane.trajectory-a {
+      border-top-color: rgba(102, 229, 255, 0.42);
+    }
+
+    .lane.trajectory-b {
+      border-top-color: rgba(103, 247, 191, 0.38);
+    }
+
+    .lane.is-hidden {
+      opacity: 0;
     }
 
     .packet-layer {
@@ -272,6 +346,12 @@
         0 0 24px color-mix(in srgb, var(--packet-color) 60%, transparent 40%);
       border: 1px solid color-mix(in srgb, var(--packet-color) 70%, white 30%);
       opacity: 0;
+    }
+
+    .packet.dynamic-path {
+      left: 0;
+      top: 0;
+      transform: translate(var(--path-x0), var(--path-y0)) translate(-50%, -50%);
     }
 
     .packet::before {
@@ -345,6 +425,47 @@
       color: var(--muted);
       font-size: 0.8rem;
       letter-spacing: 0.04em;
+    }
+
+    .node-visual.state-success {
+      border-color: rgba(103, 247, 191, 0.8);
+      box-shadow: inset 0 0 22px rgba(103, 247, 191, 0.2), 0 0 30px rgba(103, 247, 191, 0.42);
+      background:
+        radial-gradient(circle at 35% 30%, rgba(103, 247, 191, 0.28), transparent 32%),
+        linear-gradient(180deg, rgba(16, 68, 64, 0.96), rgba(8, 31, 34, 0.96));
+    }
+
+    .node-visual.state-failure {
+      border-color: rgba(255, 127, 159, 0.82);
+      box-shadow: inset 0 0 22px rgba(255, 127, 159, 0.18), 0 0 30px rgba(255, 127, 159, 0.4);
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255, 127, 159, 0.24), transparent 32%),
+        linear-gradient(180deg, rgba(78, 24, 42, 0.96), rgba(36, 10, 22, 0.96));
+    }
+
+    .node-visual.state-warning {
+      border-color: rgba(255, 209, 102, 0.84);
+      box-shadow: inset 0 0 22px rgba(255, 209, 102, 0.2), 0 0 30px rgba(255, 209, 102, 0.42);
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255, 209, 102, 0.24), transparent 32%),
+        linear-gradient(180deg, rgba(84, 58, 19, 0.96), rgba(35, 24, 8, 0.96));
+    }
+
+    .node-visual.state-collision {
+      animation: gnbCollision 0.7s ease;
+    }
+
+    .collision-burst {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      transform: translate(-50%, -50%) scale(0.4);
+      opacity: 0;
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(255, 165, 165, 0.95), rgba(255, 64, 64, 0.18) 68%, transparent 72%);
+      box-shadow: 0 0 28px rgba(255, 71, 87, 0.85);
+      animation: collisionBurst 0.75s ease-out forwards;
     }
 
     .log-panel {
@@ -438,6 +559,69 @@
       }
     }
 
+    @keyframes packet-path-motion {
+      0% {
+        opacity: 0;
+        transform: translate(var(--path-x0), var(--path-y0)) translate(-50%, -50%);
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--path-x1), var(--path-y1)) translate(-50%, -50%);
+      }
+    }
+
+    @keyframes packet-branch-up {
+      0% {
+        opacity: 0;
+        transform: translate(var(--path-x0), var(--path-y0)) translate(-50%, -50%);
+      }
+      12% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--path-x1), var(--path-y1)) translate(-50%, -50%);
+      }
+    }
+
+    @keyframes packet-branch-down {
+      0% {
+        opacity: 0;
+        transform: translate(var(--path-x0), var(--path-y0)) translate(-50%, -50%);
+      }
+      12% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--path-x1), var(--path-y1)) translate(-50%, -50%);
+      }
+    }
+
+    @keyframes gnbCollision {
+      0%, 100% { transform: translateX(0); }
+      18% { transform: translateX(-6px); }
+      36% { transform: translateX(6px); }
+      54% { transform: translateX(-5px); }
+      72% { transform: translateX(5px); }
+      90% {
+        transform: translateX(0);
+        box-shadow: inset 0 0 26px rgba(255, 127, 159, 0.22), 0 0 34px rgba(255, 91, 91, 0.48);
+      }
+    }
+
+    @keyframes collisionBurst {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.45); }
+      18% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(4.6); }
+    }
+
     @media (max-width: 900px) {
       .app {
         grid-template-rows: auto minmax(560px, 1fr) 230px;
@@ -493,6 +677,11 @@
         font-size: 0.9rem;
       }
 
+      .mode-toggle {
+        width: 100%;
+        justify-content: center;
+      }
+
       .viz-panel {
         grid-template-columns: 1fr;
         grid-template-rows: auto minmax(300px, 1fr) auto;
@@ -503,6 +692,15 @@
         flex-direction: row;
         justify-content: flex-start;
         padding-inline: 8px;
+      }
+
+      .ue-stack,
+      .ue-stack.contention-mode {
+        gap: 12px;
+      }
+
+      .ue-unit.hidden {
+        transform: translateY(-10px) scale(0.98);
       }
 
       .center-stage {
@@ -531,14 +729,25 @@
       <div class="actions">
         <button id="play4">播放 4-Step RACH (Type-I)</button>
         <button id="play2">播放 2-Step RACH (Type-II)</button>
+        <label class="mode-toggle" for="contentionToggle">
+          <input type="checkbox" id="contentionToggle">
+          <span>啟動競爭碰撞模式 (Contention Mode)</span>
+        </label>
       </div>
     </section>
 
     <section class="viz-panel">
-      <div class="node">
-        <div class="node-visual ue-icon"></div>
-        <div class="node-label">UE</div>
-        <div class="node-sub">User Equipment<br>PRACH Originator</div>
+      <div class="node ue-stack" id="ueStack">
+        <div class="ue-unit" id="ueAUnit">
+          <div class="node-visual ue-icon" id="ueAVisual"></div>
+          <div class="node-label">UE-A (Primary)</div>
+          <div class="node-sub">User Equipment A<br>Primary PRACH Originator</div>
+        </div>
+        <div class="ue-unit hidden" id="ueBUnit">
+          <div class="node-visual ue-icon" id="ueBVisual"></div>
+          <div class="node-label">UE-B (Secondary)</div>
+          <div class="node-sub">User Equipment B<br>Secondary Contender</div>
+        </div>
       </div>
 
       <div class="center-stage" id="stage">
@@ -578,27 +787,123 @@
     const status = document.getElementById('status');
     const play4 = document.getElementById('play4');
     const play2 = document.getElementById('play2');
+    const contentionToggle = document.getElementById('contentionToggle');
+    const ueStack = document.getElementById('ueStack');
+    const ueAUnit = document.getElementById('ueAUnit');
+    const ueBUnit = document.getElementById('ueBUnit');
+    const ueAVisual = document.getElementById('ueAVisual');
+    const ueBVisual = document.getElementById('ueBVisual');
+    const gnbVisual = document.querySelector('.gnb-icon');
 
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     const lanes = [20, 38, 56, 74];
+    const endpointX = {
+      ue: 10,
+      gnb: 90,
+      mid: 50
+    };
     let isPlaying = false;
     let currentRun = 0;
+    let isContentionMode = false;
+    let ueBHideTimer = null;
+    const laneElements = [];
 
     lanes.forEach((top) => {
       const lane = document.createElement('div');
       lane.className = 'lane';
       lane.style.top = `${top}%`;
       stage.appendChild(lane);
+      laneElements.push(lane);
     });
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function getRelativeCenterY(element) {
+      const stageRect = stage.getBoundingClientRect();
+      const rect = element.getBoundingClientRect();
+      const center = rect.top + rect.height / 2 - stageRect.top;
+      return clamp((center / stageRect.height) * 100, 8, 88);
+    }
+
+    function getContentionGeometry() {
+      return {
+        ueA: getRelativeCenterY(ueAVisual),
+        ueB: getRelativeCenterY(ueBVisual),
+        gnb: getRelativeCenterY(gnbVisual),
+        split: clamp((getRelativeCenterY(ueAVisual) + getRelativeCenterY(ueBVisual)) / 2, 18, 82)
+      };
+    }
+
+    function updateStageLanes() {
+      if (!isContentionMode) {
+        laneElements.forEach((lane, index) => {
+          lane.className = 'lane';
+          lane.style.top = `${lanes[index]}%`;
+        });
+        return;
+      }
+
+      const geometry = getContentionGeometry();
+      const contentionTracks = [geometry.ueA, geometry.ueB, geometry.ueA, geometry.ueB];
+      laneElements.forEach((lane, index) => {
+        lane.className = 'lane';
+        lane.style.top = `${contentionTracks[index]}%`;
+        if (index === 0 || index === 2) {
+          lane.classList.add('trajectory-a');
+        } else {
+          lane.classList.add('trajectory-b');
+        }
+        if (index > 1) {
+          lane.classList.add('is-hidden');
+        }
+      });
+    }
 
     function setButtons(disabled) {
       play4.disabled = disabled;
       play2.disabled = disabled;
+      contentionToggle.disabled = disabled;
     }
 
     function clearStage() {
       packetLayer.innerHTML = '';
+    }
+
+    function setContentionMode(enabled) {
+      isContentionMode = enabled;
+      ueStack.classList.toggle('contention-mode', enabled);
+      if (ueBHideTimer) {
+        clearTimeout(ueBHideTimer);
+        ueBHideTimer = null;
+      }
+      if (enabled) {
+        ueBUnit.style.display = '';
+        requestAnimationFrame(() => ueBUnit.classList.remove('hidden'));
+      } else {
+        ueBUnit.classList.add('hidden');
+        ueBHideTimer = setTimeout(() => {
+          ueBUnit.style.display = 'none';
+          ueBHideTimer = null;
+        }, 350);
+      }
+      requestAnimationFrame(updateStageLanes);
+      clearNodeStates();
+    }
+
+    function clearNodeStates() {
+      [ueAVisual, ueBVisual, gnbVisual].forEach((node) => {
+        node.classList.remove('state-success', 'state-failure', 'state-warning', 'state-collision');
+      });
+    }
+
+    function markNodeState(target, state) {
+      target.classList.remove('state-success', 'state-failure', 'state-warning');
+      if (state) {
+        target.classList.add(`state-${state}`);
+      }
     }
 
     function resetLog(title, desc) {
@@ -623,6 +928,25 @@
       pulse.style.animation = 'endpoint-ping 0.55s ease-out forwards';
       packetLayer.appendChild(pulse);
       pulse.addEventListener('animationend', () => pulse.remove(), { once: true });
+    }
+
+    function pulseAtPoint(left, top, color) {
+      const pulse = document.createElement('div');
+      pulse.className = 'pulse';
+      pulse.style.left = `${left}%`;
+      pulse.style.top = `${top}%`;
+      pulse.style.background = color;
+      pulse.style.boxShadow = `0 0 18px ${color}`;
+      pulse.style.animation = 'endpoint-ping 0.55s ease-out forwards';
+      packetLayer.appendChild(pulse);
+      pulse.addEventListener('animationend', () => pulse.remove(), { once: true });
+    }
+
+    function toStagePixels(xPercent, yPercent) {
+      return {
+        x: (stage.clientWidth * xPercent) / 100,
+        y: (stage.clientHeight * yPercent) / 100
+      };
     }
 
     function launchPacket({ label, direction, laneIndex, duration = 1500, color = '#66e5ff', width = 110, delay = 0 }) {
@@ -651,6 +975,70 @@
       });
     }
 
+    function launchPacketPath({
+      label,
+      fromX,
+      toX,
+      top,
+      duration = 1500,
+      color = '#66e5ff',
+      width = 110,
+      delay = 0,
+      emitPulse = true,
+      toTop = top,
+      animationName = 'packet-path-motion'
+    }) {
+      return new Promise((resolve) => {
+        const packet = document.createElement('div');
+        const start = toStagePixels(fromX, top);
+        const end = toStagePixels(toX, toTop);
+        packet.className = `packet dynamic-path${toX < fromX ? ' reverse' : ''}`;
+        packet.style.width = `${width}px`;
+        packet.style.setProperty('--packet-color', color);
+        packet.style.setProperty('--path-x0', `${start.x}px`);
+        packet.style.setProperty('--path-y0', `${start.y}px`);
+        packet.style.setProperty('--path-x1', `${end.x}px`);
+        packet.style.setProperty('--path-y1', `${end.y}px`);
+
+        const packetLabel = document.createElement('div');
+        packetLabel.className = 'packet-label';
+        packetLabel.textContent = label;
+        packet.appendChild(packetLabel);
+        packetLayer.appendChild(packet);
+
+        setTimeout(() => {
+          packet.style.animation = `${animationName} ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) forwards`;
+          packet.addEventListener('animationend', () => {
+            if (emitPulse) {
+              pulseAtPoint(toX, toTop, color);
+            }
+            packet.remove();
+            resolve();
+          }, { once: true });
+        }, delay);
+      });
+    }
+
+    function spawnCollisionBurst(top, left = endpointX.gnb, color = '#ff5e7e') {
+      const burst = document.createElement('div');
+      burst.className = 'collision-burst';
+      burst.style.top = `${top}%`;
+      burst.style.left = `${left}%`;
+      burst.style.background = `radial-gradient(circle, color-mix(in srgb, ${color} 92%, white 8%), color-mix(in srgb, ${color} 36%, transparent 64%) 68%, transparent 72%)`;
+      burst.style.boxShadow = `0 0 28px ${color}`;
+      packetLayer.appendChild(burst);
+      burst.addEventListener('animationend', () => burst.remove(), { once: true });
+    }
+
+    async function gnbCollision(top) {
+      gnbVisual.classList.remove('state-collision');
+      void gnbVisual.offsetWidth;
+      gnbVisual.classList.add('state-collision');
+      spawnCollisionBurst(top);
+      await sleep(700);
+      gnbVisual.classList.remove('state-collision');
+    }
+
     async function playSequence(sequence, headerTitle, headerDesc) {
       if (isPlaying) return;
       isPlaying = true;
@@ -658,6 +1046,7 @@
       const runId = currentRun;
       setButtons(true);
       clearStage();
+      clearNodeStates();
       resetLog(headerTitle, headerDesc);
       status.textContent = 'RUNNING';
 
@@ -687,9 +1076,168 @@
       if (runId === currentRun) {
         status.textContent = 'COMPLETE';
         pushLog('Procedure Complete', '流程播放完成，可再次點選按鈕重播 4-Step 或 2-Step RACH。');
+        clearNodeStates();
         isPlaying = false;
         setButtons(false);
       }
+    }
+
+    async function finishProcedure(message = '流程播放完成，可再次點選按鈕重播 4-Step 或 2-Step RACH。') {
+      status.textContent = 'COMPLETE';
+      pushLog('Procedure Complete', message);
+      isPlaying = false;
+      setButtons(false);
+    }
+
+    async function playContention4Step() {
+      if (isPlaying) return;
+      isPlaying = true;
+      currentRun += 1;
+      const runId = currentRun;
+      setButtons(true);
+      clearStage();
+      clearNodeStates();
+      updateStageLanes();
+      const geometry = getContentionGeometry();
+      resetLog('4-Step RACH / Type-I / Contention Mode', '雙 UE 同時進行 contention-based random access，觀察 Msg1~Msg4 碰撞與競爭解決結果。');
+      status.textContent = 'MSG1 / DUAL PRACH';
+
+      pushLog('Msg1', 'UE-A 與 UE-B 同時送出 PRACH Preamble，兩者在相同 random access occasion 上競爭。');
+      await Promise.all([
+        launchPacketPath({ label: 'UE-A  Msg1 PRACH', fromX: endpointX.ue, toX: endpointX.gnb, top: geometry.ueA, toTop: geometry.gnb, duration: 1500, color: '#66e5ff', width: 124 }),
+        launchPacketPath({ label: 'UE-B  Msg1 PRACH', fromX: endpointX.ue, toX: endpointX.gnb, top: geometry.ueB, toTop: geometry.gnb, duration: 1500, color: '#66e5ff', width: 124 })
+      ]);
+      await sleep(280);
+      if (runId !== currentRun) return;
+
+      status.textContent = 'gNB PROCESSING';
+      pushLog('Processing Delay', 'gNB 偵測到同一組 contention 資源上的雙 preamble，準備廣播式 RAR 回應。');
+      await sleep(750);
+      if (runId !== currentRun) return;
+
+      status.textContent = 'MSG2 / SPLIT RAR';
+      pushLog('Msg2 (RAR)', 'gNB 發送一顆 RAR 光球至中點後分裂成雙路，兩台 UE 同步收到 Timing Advance、UL Grant 與 TC-RNTI。');
+      await launchPacketPath({ label: 'Msg2  Shared RAR', fromX: endpointX.gnb, toX: endpointX.mid, top: geometry.gnb, toTop: geometry.split, duration: 800, color: '#ffd166', width: 148, emitPulse: false });
+      await Promise.all([
+        launchPacketPath({ label: 'Msg2-A  RAR', fromX: endpointX.mid, toX: endpointX.ue, top: geometry.split, toTop: geometry.ueA, duration: 860, color: '#ffd166', width: 132, animationName: 'packet-branch-up' }),
+        launchPacketPath({ label: 'Msg2-B  RAR', fromX: endpointX.mid, toX: endpointX.ue, top: geometry.split, toTop: geometry.ueB, duration: 860, color: '#ffd166', width: 132, animationName: 'packet-branch-down' })
+      ]);
+      await sleep(240);
+      if (runId !== currentRun) return;
+
+      status.textContent = 'MSG3 / COLLISION';
+      pushLog('Msg3 Collision', 'UE-A 與 UE-B 同時依據相同 UL Grant 發送 Msg3，於 gNB 端發生 contention collision。');
+      await Promise.all([
+        launchPacketPath({ label: 'UE-A  Msg3', fromX: endpointX.ue, toX: endpointX.gnb, top: geometry.ueA, toTop: geometry.gnb, duration: 1500, color: '#67f7bf', width: 154, emitPulse: false }),
+        launchPacketPath({ label: 'UE-B  Msg3', fromX: endpointX.ue, toX: endpointX.gnb, top: geometry.ueB, toTop: geometry.gnb, duration: 1500, color: '#67f7bf', width: 154, emitPulse: false })
+      ]);
+      await gnbCollision(geometry.gnb);
+      await sleep(180);
+      if (runId !== currentRun) return;
+
+      const outcome = Math.floor(Math.random() * 3);
+      if (outcome === 0) {
+        status.textContent = 'MSG4 / UE-A WIN';
+        pushLog('Msg4 Outcome', '隨機結局: UE-A 勝出。gNB 僅對 UE-A 發送 Msg4，UE-B 因 contention resolution timeout 失敗。');
+        await launchPacketPath({ label: 'Msg4  To UE-A', fromX: endpointX.gnb, toX: endpointX.ue, top: geometry.gnb, toTop: geometry.ueA, duration: 1600, color: '#ff6fae', width: 162 });
+        markNodeState(ueAVisual, 'success');
+        markNodeState(ueBVisual, 'failure');
+      } else if (outcome === 1) {
+        status.textContent = 'MSG4 / UE-B WIN';
+        pushLog('Msg4 Outcome', '隨機結局: UE-B 勝出。gNB 僅對 UE-B 發送 Msg4，UE-A 因 contention resolution timeout 失敗。');
+        await launchPacketPath({ label: 'Msg4  To UE-B', fromX: endpointX.gnb, toX: endpointX.ue, top: geometry.gnb, toTop: geometry.ueB, duration: 1600, color: '#ff6fae', width: 162 });
+        markNodeState(ueBVisual, 'success');
+        markNodeState(ueAVisual, 'failure');
+      } else {
+        status.textContent = 'TIMEOUT / DOUBLE LOSS';
+        pushLog('Msg4 Outcome', '隨機結局: 嚴重干擾，雙方皆 Timeout。gNB 無法完成 contention resolution，因此不發送 Msg4。');
+        markNodeState(ueAVisual, 'failure');
+        markNodeState(ueBVisual, 'failure');
+      }
+
+      await finishProcedure('競爭碰撞模式 4-Step 播放完成，可再次重播觀察不同隨機結局。');
+    }
+
+    async function playMsg3CollisionFallback(runId) {
+      const geometry = getContentionGeometry();
+      status.textContent = 'MSG3 / FALLBACK COLLISION';
+      pushLog('Fallback Msg3 Collision', 'Fallback RAR 下發後，UE-A 與 UE-B 重新進入 4-Step 的 Msg3 上行競爭，碰撞再次發生於 gNB。');
+      await Promise.all([
+        launchPacketPath({ label: 'UE-A  Msg3', fromX: endpointX.ue, toX: endpointX.gnb, top: geometry.ueA, toTop: geometry.gnb, duration: 1500, color: '#67f7bf', width: 154, emitPulse: false }),
+        launchPacketPath({ label: 'UE-B  Msg3', fromX: endpointX.ue, toX: endpointX.gnb, top: geometry.ueB, toTop: geometry.gnb, duration: 1500, color: '#67f7bf', width: 154, emitPulse: false })
+      ]);
+      await gnbCollision(geometry.gnb);
+      return runId === currentRun;
+    }
+
+    async function playContention2Step() {
+      if (isPlaying) return;
+      isPlaying = true;
+      currentRun += 1;
+      const runId = currentRun;
+      setButtons(true);
+      clearStage();
+      clearNodeStates();
+      updateStageLanes();
+      const geometry = getContentionGeometry();
+      resetLog('2-Step RACH / Type-II / Contention Mode', '雙 UE 同時送出 MsgA，根據 PUSCH 解碼結果隨機分流為直接勝出或 fallback 降級為 4-Step。');
+      status.textContent = 'MSGA / DUAL COMPOSITE';
+
+      pushLog('MsgA', 'UE-A 與 UE-B 同步送出 preamble + PUSCH payload；其中 PUSCH 載荷在 gNB 端產生碰撞。');
+      await Promise.all([
+        launchPacketPath({ label: 'UE-A  MsgA-1 PRACH', fromX: endpointX.ue, toX: endpointX.gnb, top: geometry.ueA, toTop: geometry.gnb, duration: 1380, color: '#66e5ff', width: 98 }),
+        launchPacketPath({ label: 'UE-B  MsgA-1 PRACH', fromX: endpointX.ue, toX: endpointX.gnb, top: geometry.ueB, toTop: geometry.gnb, duration: 1380, color: '#66e5ff', width: 98 }),
+        launchPacketPath({ label: 'UE-A  MsgA-2 PUSCH', fromX: endpointX.ue, toX: endpointX.gnb, top: geometry.ueA, toTop: geometry.gnb, duration: 1380, color: '#67f7bf', width: 128, delay: 180, emitPulse: false }),
+        launchPacketPath({ label: 'UE-B  MsgA-2 PUSCH', fromX: endpointX.ue, toX: endpointX.gnb, top: geometry.ueB, toTop: geometry.gnb, duration: 1380, color: '#67f7bf', width: 128, delay: 180, emitPulse: false })
+      ]);
+      await gnbCollision(geometry.gnb);
+      await sleep(220);
+      if (runId !== currentRun) return;
+
+      status.textContent = 'gNB PROCESSING';
+      pushLog('Processing Delay', 'gNB 嘗試解碼雙方 MsgA 內的 PUSCH 載荷，並判定是否可直接完成 contention resolution。');
+      await sleep(820);
+      if (runId !== currentRun) return;
+
+      const directSuccess = Math.random() < 0.4;
+      if (directSuccess) {
+        const winner = Math.random() < 0.5 ? 'A' : 'B';
+        status.textContent = `MSGB / UE-${winner} WIN`;
+        pushLog('MsgB Outcome', `隨機結局: 40% 直接成功分支，UE-${winner} 成功解碼。gNB 僅回傳 MsgB 給勝出者，另一方視為 contention failure。`);
+        await launchPacketPath({
+          label: `MsgB  To UE-${winner}`,
+          fromX: endpointX.gnb,
+          toX: endpointX.ue,
+          top: geometry.gnb,
+          toTop: winner === 'A' ? geometry.ueA : geometry.ueB,
+          duration: 1620,
+          color: '#4da3ff',
+          width: 182
+        });
+        markNodeState(winner === 'A' ? ueAVisual : ueBVisual, 'success');
+        markNodeState(winner === 'A' ? ueBVisual : ueAVisual, 'failure');
+        await finishProcedure('競爭碰撞模式 2-Step 播放完成，本次由單一 UE 成功取得 MsgB。');
+        return;
+      }
+
+      status.textContent = 'MSGB / FALLBACK RAR';
+      pushLog('MsgB / Fallback', '隨機結局: 60% 降級分支。PUSCH 解碼失敗，下發 Fallback RAR 降級為 4-Step。');
+      await launchPacketPath({ label: 'Fallback RAR Shared', fromX: endpointX.gnb, toX: endpointX.mid, top: geometry.gnb, toTop: geometry.split, duration: 720, color: '#ffd166', width: 154, emitPulse: false });
+      await Promise.all([
+        launchPacketPath({ label: 'Fallback RAR-A', fromX: endpointX.mid, toX: endpointX.ue, top: geometry.split, toTop: geometry.ueA, duration: 720, color: '#ffd166', width: 154, animationName: 'packet-branch-up' }),
+        launchPacketPath({ label: 'Fallback RAR-B', fromX: endpointX.mid, toX: endpointX.ue, top: geometry.split, toTop: geometry.ueB, duration: 720, color: '#ffd166', width: 154, animationName: 'packet-branch-down' })
+      ]);
+      markNodeState(ueAVisual, 'warning');
+      markNodeState(ueBVisual, 'warning');
+      if (runId !== currentRun) return;
+
+      const stillActive = await playMsg3CollisionFallback(runId);
+      if (!stillActive) return;
+
+      markNodeState(ueAVisual, 'failure');
+      markNodeState(ueBVisual, 'failure');
+      pushLog('Fallback Result', 'Fallback RAR 後仍於 Msg3 發生碰撞，本次示意停在 contention collision，等待後續重試。');
+      await finishProcedure('競爭碰撞模式 2-Step 播放完成，本次流程已降級並示意至 4-Step Msg3 collision。');
     }
 
     const sequence4 = [
@@ -755,7 +1303,25 @@
       }
     ];
 
+    contentionToggle.addEventListener('change', (event) => {
+      setContentionMode(event.target.checked);
+      pushLog(
+        'Mode Switch',
+        event.target.checked
+          ? '已啟動競爭碰撞模式。接下來播放將顯示 UE-A / UE-B 的同步競爭與隨機結局。'
+          : '已切回單 UE 模式。後續播放會完整沿用原本 UE-A 的單機流程與動畫軌跡。'
+      );
+    });
+
+    window.addEventListener('resize', () => {
+      updateStageLanes();
+    });
+
     play4.addEventListener('click', () => {
+      if (isContentionMode) {
+        playContention4Step();
+        return;
+      }
       playSequence(
         sequence4,
         '4-Step RACH / Type-I',
@@ -764,12 +1330,19 @@
     });
 
     play2.addEventListener('click', () => {
+      if (isContentionMode) {
+        playContention2Step();
+        return;
+      }
       playSequence(
         sequence2,
         '2-Step RACH / Type-II',
         '精簡式 random access，MsgA 將 preamble 與 payload 合併，MsgB 一次完成回應與 contention resolution。'
       );
     });
+
+    setContentionMode(false);
+    updateStageLanes();
   </script>
 </body>
 </html>
